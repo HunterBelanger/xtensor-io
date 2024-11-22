@@ -97,6 +97,7 @@ OPTION(HAVE_Blosc "require Blosc for Blosc file support" OFF)
 OPTION(HAVE_GDAL "require GDAL for geospatial raster file support" OFF)
 OPTION(HAVE_storage_client "require storage_client for Google Cloud Storage IO handler support" OFF)
 OPTION(HAVE_AWSSDK "require AWSSDK for AWS S3 IO handler support" OFF)
+option(XTIO_INSTALL "export and install targets" OFF)
 
 # all dependencies can be required with -DHAVE_ALL_DEPS=ON
 
@@ -302,48 +303,49 @@ endif()
 
 # Installation
 # ============
+if (XTIO_INSTALL)
+  include(GNUInstallDirs)
+  include(CMakePackageConfigHelpers)
 
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
+  install(TARGETS xtensor-io
+          EXPORT ${PROJECT_NAME}-targets)
 
-install(TARGETS xtensor-io
-        EXPORT ${PROJECT_NAME}-targets)
+  export(EXPORT ${PROJECT_NAME}-targets
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
 
-export(EXPORT ${PROJECT_NAME}-targets
-       FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
+  install(FILES ${XTENSOR_IO_HEADERS}
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/xtensor-io)
 
-install(FILES ${XTENSOR_IO_HEADERS}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/xtensor-io)
+  install(DIRECTORY ${XTENSOR_IO_INCLUDE_DIR}/xtensor-io/thirdparty/zstr
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/xtensor-io/thirdparty)
 
-install(DIRECTORY ${XTENSOR_IO_INCLUDE_DIR}/xtensor-io/thirdparty/zstr
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/xtensor-io/thirdparty)
+  set(XTENSOR_IO_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}" CACHE
+      STRING "install path for xtensor-ioConfig.cmake")
 
-set(XTENSOR_IO_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}" CACHE
-    STRING "install path for xtensor-ioConfig.cmake")
+  configure_package_config_file(${PROJECT_NAME}Config.cmake.in
+                                "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+                                INSTALL_DESTINATION ${XTENSOR_IO_CMAKECONFIG_INSTALL_DIR})
 
-configure_package_config_file(${PROJECT_NAME}Config.cmake.in
-                              "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-                              INSTALL_DESTINATION ${XTENSOR_IO_CMAKECONFIG_INSTALL_DIR})
+  # xtensor is header-only and does not depend on the architecture.
+  # Remove CMAKE_SIZEOF_VOID_P from xtensorConfigVersion.cmake so that an xtensorConfig.cmake
+  # generated for a 64 bit target can be used for 32 bit targets and vice versa.
+  set(_XTENSOR_IO_CMAKE_SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
+  unset(CMAKE_SIZEOF_VOID_P)
+  write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+                                  VERSION ${${PROJECT_NAME}_VERSION}
+                                  COMPATIBILITY AnyNewerVersion)
+  set(CMAKE_SIZEOF_VOID_P ${_XTENSOR_IO_CMAKE_SIZEOF_VOID_P})
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+                ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+          DESTINATION ${XTENSOR_IO_CMAKECONFIG_INSTALL_DIR})
 
-# xtensor is header-only and does not depend on the architecture.
-# Remove CMAKE_SIZEOF_VOID_P from xtensorConfigVersion.cmake so that an xtensorConfig.cmake
-# generated for a 64 bit target can be used for 32 bit targets and vice versa.
-set(_XTENSOR_IO_CMAKE_SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
-unset(CMAKE_SIZEOF_VOID_P)
-write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-                                 VERSION ${${PROJECT_NAME}_VERSION}
-                                 COMPATIBILITY AnyNewerVersion)
-set(CMAKE_SIZEOF_VOID_P ${_XTENSOR_IO_CMAKE_SIZEOF_VOID_P})
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        DESTINATION ${XTENSOR_IO_CMAKECONFIG_INSTALL_DIR})
+  install(EXPORT ${PROJECT_NAME}-targets
+          FILE ${PROJECT_NAME}Targets.cmake
+          DESTINATION ${XTENSOR_IO_CMAKECONFIG_INSTALL_DIR})
 
-install(EXPORT ${PROJECT_NAME}-targets
-        FILE ${PROJECT_NAME}Targets.cmake
-        DESTINATION ${XTENSOR_IO_CMAKECONFIG_INSTALL_DIR})
-
-configure_file(${PROJECT_NAME}.pc.in
-               "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
-                @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
+  configure_file(${PROJECT_NAME}.pc.in
+                "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
+                  @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
+endif()
