@@ -79,7 +79,7 @@ namespace xt
         inline uint64_t extract_zip64_compressed_size_within(std::istream& stream,
                                                       std::streamsize nbytes)
         {
-            for (extensible_data_field desc; nbytes > sizeof(desc);)
+            for (extensible_data_field desc; nbytes > static_cast<std::streamsize>(sizeof(desc));)
             {
                 if (!stream.read(reinterpret_cast<char*>(&desc), sizeof(desc)))
                     throw std::runtime_error(
@@ -397,6 +397,14 @@ namespace xt
             assert(disk_start == 0);
             assert(nrecs_on_disk == nrecs);
             assert(comment_len == 0);
+
+            // GCC is giving warnings about the 4 uint16_t variables above
+            // being set but never used. I think they could be removed but
+            // out of an abundance of caution, I will just do this:
+            (void) disk_no;
+            (void) disk_start;
+            (void) nrecs_on_disk;
+            (void) comment_len;
         }
     }
 

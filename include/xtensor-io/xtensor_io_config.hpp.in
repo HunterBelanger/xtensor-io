@@ -14,8 +14,4 @@
 #define XTENSOR_IO_VERSION_MINOR 13
 #define XTENSOR_IO_VERSION_PATCH 0
 
-#pragma cling add_library_path(@XTENSOR_IO_CLING_LIBRARY_DIR_64@)
-#pragma cling add_library_path(@XTENSOR_IO_CLING_LIBRARY_DIR_32@)
-#pragma cling add_library_path(@XTENSOR_IO_CLING_LIBRARY_DIR@)
-
 #endif
