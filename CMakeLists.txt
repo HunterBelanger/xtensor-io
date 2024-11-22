@@ -91,6 +91,7 @@ OPTION(DOWNLOAD_GBENCHMARK "download google benchmark and build from source" ON)
 OPTION(HAVE_OIIO "require OpenImageIO dependency for image file support" OFF)
 OPTION(HAVE_SndFile "require SndFile for audio file support" OFF)
 OPTION(HAVE_ZLIB "require ZLIB for npz file support" OFF)
+OPTION(FETCH_ZLIBNG "download ZLIB-NG for npz file support" OFF)
 OPTION(HAVE_HighFive "require HighFive for HDF5 file support" OFF)
 OPTION(HAVE_Blosc "require Blosc for Blosc file support" OFF)
 OPTION(HAVE_GDAL "require GDAL for geospatial raster file support" OFF)
@@ -183,6 +184,27 @@ if(HAVE_ZLIB)
   )
 else()
   message(STATUS "ZLIB not enabled: use -DHAVE_ZLIB=ON for npz file support")
+endif()
+
+if(FETCH_ZLIBNG)
+  FetchContent_Declare(zlibng
+    GIT_REPOSITORY https://github.com/HunterBelanger/zlib-ng.git
+    GIT_TAG        feature/pic_option
+  )
+  set(ZLIB_COMPAT ON)
+  set(ZLIB_ENABLE_TESTS OFF)
+  set(ZLIBNG_ENABLE_TESTS OFF)
+  set(BUILD_GTEST OFF)
+  set(BUILD_SHARED_LIBS OFF)
+  set(WITH_PIC ON)
+  FetchContent_MakeAvailable(zlibng)
+
+  target_link_libraries(xtensor-io
+      INTERFACE
+      zlibstatic 
+  )
+else()
+  message(STATUS "ZLIB-NG not enabled: use -DFETCH_ZLIBNG=ON for npz file support")
 endif()
 
 if(HAVE_HighFive)
